@@ -13,7 +13,7 @@ void Matrix<T>::clear()
     if( !isSubMatrix )
         for(i=0;i<height;++i)
             delete []data[i];
-    free(data);
+    delete []data;
     data = nullptr;
     return;
 }
@@ -27,7 +27,7 @@ void Matrix<T>::allocate()
     clear();
     isSubMatrix = 0;
     //assign space for the new Matrix
-    data = (T**) malloc(height * sizeof(T*));
+    data = new T* [height];
     for(i=0;i<height;++i)
         data[i] = new T[width];
     return;
@@ -37,9 +37,12 @@ void Matrix<T>::allocate()
 template <typename T>
 void Matrix<T>::unitize()
 {
-    register size_t i;
-    for(i=0;i<height;++i)
-        data[i][i]=1;
+    for(size_t i=0;i<height;++i)
+    {
+        for(size_t j=0;j<height;++j)
+            data[i][j] = 0;
+        data[i][i] = 1;
+    }
     return;
 }
 
@@ -58,7 +61,7 @@ const {
     ans.isSubMatrix = 1;
     ans.height = subHeight;
     ans.width = subWidth;
-    ans.data = (T**) malloc(subHeight * sizeof(T*));
+    ans.data = new T* [subHeight];
     for(i=0;i<subHeight;++i)
         ans.data[i] = data[i+startRow]+startCol;
     return;
@@ -354,6 +357,8 @@ Matrix<T> Matrix<T>::Solution(ColVector<T> *argB, ColVector<T> *specificSolution
 {
     //store positions of free variables
     ColVector<bool> freeVariables(width);
+    for(size_t i = 0; i < width; ++i)
+        freeVariables[i] = 0;
     ColVector<T> *b = nullptr;
     if(argB)
     {
@@ -426,45 +431,16 @@ Matrix<T> Matrix<T>::Inverse() const
 {
     if(width != height)
         throw ERROR::UNSUITED_SIZE;
-    Matrix<T> U(*this), I(height);
-    register size_t i,j,k;
-    T temp;
-    for(i=0;i<height;++i)
-    {
-        if( U[i][i] == 0 )
-        {
-            j=i+1;
-            while( j < height && U[j][i] == 0 ) { ++j; }
-            if(j!=height)
-                for(k=0;k<width;++k)
-                {
-                    U[i][k] += U[j][k];
-                    I[i][k] += I[j][k];
-                }
-            //if we really find a suitable row
-            //then just add it to the faulty one
-            else
-                throw ERROR::INVALID_ARGUMENT;
-            //since the pivot has to be zero this time
-            //it has no inverse
-        }
-        
-        for(j=i+1;j<height;++j)
-            if(U[j][i] != 0)
-            {
-                if(U[j][i] == 0) continue;
-                temp = U[j][i];
-                U[j][i] = 0;
-                for(k=i+1;k<width;++k)
-                    if(U[i][k] != 0)
-                    {
-                        U[i][k] /= U[i][i];
-                        I[j][k] /= U[i][i];
-                        U[j][k] -= U[i][k]*temp;
-                        I[j][k] -= I[i][k]*temp;
-                    }
-            }
-    }
+
+    Matrix<T> U(height, height << 2);
+    Matrix<T> A,B;
+    U.__SubMatrix(A, 0, 0, height, height);
+    U.__SubMatrix(B, 0, height, height, height);
+    A=*this;
+    B.unitize();
+    U = U.Elimination();
+    Matrix<T> I(height);
+    I = B;
     return I;
 }
 
