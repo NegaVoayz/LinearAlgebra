@@ -93,6 +93,7 @@ class Matrix{
         Matrix<T> Solution(ColVector<T> *argB=nullptr, ColVector<T> *specificSolution=nullptr) const;
         Matrix<T> Inverse() const;
         T Determinant() const;
+        size_t Rank() const;
 
         const Matrix<T> &operator+= (const Matrix<T> &A);
         const Matrix<T> &operator-= (const Matrix<T> &A);

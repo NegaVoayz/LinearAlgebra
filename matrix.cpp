@@ -458,6 +458,22 @@ T Matrix<T>::Determinant() const
     return ans;
 }
 
+
+template <typename T>
+size_t Matrix<T>::Rank() const
+{
+    Matrix<T> temp(this->Elimination());
+    size_t x,y;
+    x=0;y=0;
+    while(y<height)
+    {
+        while(x<width && temp[y][x]==0) ++x;
+        if(x<width) ++y;
+        else break;
+    }
+    return y;
+}
+
 //----------------column vector----------------
 template <typename T>
 ColVector<T>::ColVector(): Matrix<T>() {}
